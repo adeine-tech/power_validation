@@ -1,0 +1,272 @@
+import pandas as pd
+import os
+from datetime import datetime
+import logging
+import math
+
+logging.basicConfig(level=logging.INFO)
+
+# -----------------------------------------------------------------------------
+# 1) Radio catalog: limits per Radio_Type (now includes tolerance)
+# -----------------------------------------------------------------------------
+radio_attributes_list = pd.DataFrame([
+    {'Radio_Type': 'rf4486', 'Technology': 'LTE', 'Bandwidth': 5,  'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'LTE', 'Bandwidth': 10, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'LTE', 'Bandwidth': 15, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'LTE', 'Bandwidth': 20, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'NR',  'Bandwidth': 5,  'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'NR',  'Bandwidth': 10, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'NR',  'Bandwidth': 15, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'NR',  'Bandwidth': 20, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'NR',  'Bandwidth': 25, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4486', 'Technology': 'NR',  'Bandwidth': 30, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+
+    {'Radio_Type': 'rf4494', 'Technology': 'LTE', 'Bandwidth': 5,  'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4494', 'Technology': 'LTE', 'Bandwidth': 10, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4494', 'Technology': 'LTE', 'Bandwidth': 15, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4494', 'Technology': 'LTE', 'Bandwidth': 20, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4494', 'Technology': 'NR',  'Bandwidth': 5,  'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4494', 'Technology': 'NR',  'Bandwidth': 10, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4494', 'Technology': 'NR',  'Bandwidth': 15, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4494', 'Technology': 'NR',  'Bandwidth': 20, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+
+    {'Radio_Type': 'rf4435', 'Technology': 'LTE', 'Bandwidth': 5,  'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4435', 'Technology': 'LTE', 'Bandwidth': 10, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4435', 'Technology': 'LTE', 'Bandwidth': 15, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4435', 'Technology': 'LTE', 'Bandwidth': 20, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4435', 'Technology': 'NR',  'Bandwidth': 5,  'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4435', 'Technology': 'NR',  'Bandwidth': 10, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4435', 'Technology': 'NR',  'Bandwidth': 15, 'Max_Bandwidth': 35, 'Max_Num_Carriers': 4, 'Tx': '4T',  'Output_Power_in_W': 80.0, 'Output Power_in_dBm': 49, 'Total_Power': 320, 'tolerance': 0.1},
+
+    {'Radio_Type': 'rf4461', 'Technology': 'LTE', 'Bandwidth': 5,  'Max_Bandwidth': 25, 'Max_Num_Carriers': 3, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4461', 'Technology': 'LTE', 'Bandwidth': 10, 'Max_Bandwidth': 25, 'Max_Num_Carriers': 3, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4461', 'Technology': 'NR',  'Bandwidth': 5,  'Max_Bandwidth': 25, 'Max_Num_Carriers': 3, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+    {'Radio_Type': 'rf4461', 'Technology': 'NR',  'Bandwidth': 10, 'Max_Bandwidth': 25, 'Max_Num_Carriers': 3, 'Tx': '4T',  'Output_Power_in_W': 40.0, 'Output Power_in_dBm': 46, 'Total_Power': 160, 'tolerance': 0.1},
+
+    {'Radio_Type': 'mt6402', 'Technology': 'LTE', 'Bandwidth': 5,  'Max_Bandwidth': 100, 'Max_Num_Carriers': 3, 'Tx': '64T', 'Output_Power_in_W': 0.03, 'Output Power_in_dBm': 15, 'Total_Power': 20, 'tolerance': 0.1},
+    {'Radio_Type': 'mt6402', 'Technology': 'LTE', 'Bandwidth': 10, 'Max_Bandwidth': 100, 'Max_Num_Carriers': 3, 'Tx': '64T', 'Output_Power_in_W': 0.03, 'Output Power_in_dBm': 15, 'Total_Power': 20, 'tolerance': 0.1},
+    {'Radio_Type': 'mt6402', 'Technology': 'LTE', 'Bandwidth': 15, 'Max_Bandwidth': 100, 'Max_Num_Carriers': 3, 'Tx': '64T', 'Output_Power_in_W': 0.03, 'Output Power_in_dBm': 15, 'Total_Power': 20, 'tolerance': 0.1},
+    {'Radio_Type': 'mt6402', 'Technology': 'LTE', 'Bandwidth': 20, 'Max_Bandwidth': 100, 'Max_Num_Carriers': 3, 'Tx': '64T', 'Output_Power_in_W': 0.03, 'Output Power_in_dBm': 15, 'Total_Power': 20, 'tolerance': 0.1},
+    {'Radio_Type': 'mt6402', 'Technology': 'NR',  'Bandwidth': 10, 'Max_Bandwidth': 80,  'Max_Num_Carriers': 3, 'Tx': '64T', 'Output_Power_in_W': 0.03, 'Output Power_in_dBm': 15, 'Total_Power': 20, 'tolerance': 0.1},
+    {'Radio_Type': 'mt6402', 'Technology': 'NR',  'Bandwidth': 20, 'Max_Bandwidth': 80,  'Max_Num_Carriers': 3, 'Tx': '64T', 'Output_Power_in_W': 0.03, 'Output Power_in_dBm': 15, 'Total_Power': 20, 'tolerance': 0.1},
+    {'Radio_Type': 'mt6402', 'Technology': 'NR',  'Bandwidth': 40, 'Max_Bandwidth': 80,  'Max_Num_Carriers': 3, 'Tx': '64T', 'Output_Power_in_W': 0.03, 'Output Power_in_dBm': 15, 'Total_Power': 20, 'tolerance': 0.1},
+])
+
+def get_radio_limits(radio_type: str):
+    """Lookup allowed_carriers, power_limit, tolerance from the catalog for a Radio_Type."""
+    rows = radio_attributes_list[radio_attributes_list['Radio_Type'] == radio_type]
+    if rows.empty:
+        return None
+    row = rows.iloc[0]
+    return {
+        'allowed_carriers': int(row['Max_Num_Carriers']),
+        'power_limit': float(row['Total_Power']),
+        'tolerance': float(row['tolerance']),
+    }
+
+# -----------------------------------------------------------------------------
+# 2) RadioPowerCalculator using TOTAL power (W)
+# -----------------------------------------------------------------------------
+class RadioPowerCalculator:
+    """
+    Decide if a radio is Overpowered / Underpowered / Powered Correctly.
+
+    radio_attributes must contain:
+      - radio_id
+      - num_carriers
+      - allowed_carriers
+      - power_limit (Total_Power in W)
+      - tolerance (W)
+      - power_usage: dict { 'LTE': total_W, 'NR': total_W, ... }
+    """
+    def __init__(self, radio_attributes: dict):
+        self.radio_attributes = radio_attributes
+        self.logger = logging.getLogger(__name__)
+
+    def calculate_power(self):
+        self.validate_input()
+        total_power_usage = sum(self.radio_attributes['power_usage'].values())
+        power_state = self.determine_power_state(total_power_usage)
+        return self.generate_output(power_state, total_power_usage)
+
+    def validate_input(self):
+        if self.radio_attributes['num_carriers'] > self.radio_attributes['allowed_carriers']:
+            msg = f"Number of carriers exceeds allowed limit ({self.radio_attributes['num_carriers']} > {self.radio_attributes['allowed_carriers']})"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
+    def determine_power_state(self, total_power_usage: float) -> str:
+        tolerance = self.radio_attributes['tolerance']
+        power_limit = self.radio_attributes['power_limit']
+
+        if total_power_usage > power_limit + tolerance:
+            return "Overpowered"
+        elif total_power_usage < power_limit - tolerance:
+            return "Underpowered"
+        else:
+            return "Powered Correctly"
+
+    def generate_output(self, power_state: str, total_power_usage: float):
+        # Short, line-style result (we only need this for writing back to the sheet)
+        line_output = {
+            'radio_id': self.radio_attributes['radio_id'],
+            'power_state': power_state,
+            'aggregate_power_usage': total_power_usage,
+        }
+        return line_output
+
+# dBm -> W
+def dbm_to_watts(dbm_series: pd.Series) -> pd.Series:
+    return 10 ** ((dbm_series - 30) / 10.0)
+
+# -----------------------------------------------------------------------------
+# 3) Load Excel and build Radio_Port mapping
+# -----------------------------------------------------------------------------
+dir_path = '/data/usm_data/usm_ciq'
+excel_files = [f for f in os.listdir(dir_path) if f.endswith('.xlsx') or f.endswith('.xls')]
+if len(excel_files) != 1:
+    raise ValueError("Expected exactly one Excel file in the directory")
+file_name = excel_files[0]
+full_path = os.path.join(dir_path, file_name)
+
+excel_file = pd.ExcelFile(full_path)
+lte_sheet = excel_file.parse("LTE_RAN_CIQ")
+nr_sheet = excel_file.parse("NR_RAN_CIQ")
+
+lte_sheet['enb_id'] = lte_sheet['ENB_ID']
+lte_sheet['gnb_id'] = lte_sheet['COLO_NODE_ID'].astype(str).str.split('_', expand=True).iloc[:, 1].fillna('')
+
+required_columns = ['GCB_CARD_ID', 'PRIMARY_CPRI_PORT_ID', 'UNIT_ID']
+
+lte_carrier_attrib = ['BANDWIDTH', 'OUTPUT_POWER', 'TX', 'RRH_CODE']
+nr_carrier_attrib = ['BANDWIDTH', 'OUTPUT_POWER_DBM', 'TX', 'RRH_TYPE']
+
+# Radio_Port for LTE
+mask_lte = lte_sheet[required_columns].notna().all(axis=1)
+lte_sheet.loc[mask_lte, 'Radio_Port'] = (
+    lte_sheet.loc[mask_lte, 'UNIT_ID'].astype(int).astype(str) + '_' +
+    lte_sheet.loc[mask_lte, 'GCB_CARD_ID'].astype(int).astype(str) + '_' +
+    lte_sheet.loc[mask_lte, 'PRIMARY_CPRI_PORT_ID'].astype(int).astype(str)
+)
+lte_sheet.loc[~mask_lte, 'Radio_Port'] = ''
+
+# Radio_Port for NR
+mask_nr = nr_sheet[required_columns].notna().all(axis=1)
+nr_sheet.loc[mask_nr, 'Radio_Port'] = (
+    nr_sheet.loc[mask_nr, 'UNIT_ID'].astype(int).astype(str) + '_' +
+    nr_sheet.loc[mask_nr, 'GCB_CARD_ID'].astype(int).astype(str) + '_' +
+    nr_sheet.loc[mask_nr, 'PRIMARY_CPRI_PORT_ID'].astype(int).astype(str)
+)
+nr_sheet.loc[~mask_nr, 'Radio_Port'] = ''
+
+# Clean up IDs
+lte_sheet['gnb_id'] = lte_sheet['gnb_id'].astype(str).str.strip()
+nr_sheet['NR_ID'] = nr_sheet['NR_ID'].astype(str).str.strip()
+lte_sheet['Radio_Port'] = lte_sheet['Radio_Port'].astype(str).str.strip()
+nr_sheet['Radio_Port'] = nr_sheet['Radio_Port'].astype(str).str.strip()
+
+# gnb_available flag on LTE sheet
+lte_sheet['gnb_available'] = ''
+for idx, row in lte_sheet.iterrows():
+    gnb_id = row['gnb_id']
+    radio_port = row['Radio_Port']
+    if radio_port != '' and not pd.isna(gnb_id):
+        if ((nr_sheet['NR_ID'] == gnb_id) & (nr_sheet['Radio_Port'] == radio_port)).any():
+            lte_sheet.at[idx, 'gnb_available'] = 'Yes'
+
+# -----------------------------------------------------------------------------
+# 4) Calculate radio power per enb_id + Radio_Port and write result to each row
+# -----------------------------------------------------------------------------
+lte_sheet['Radio_Power_State'] = ''      # result of determine_power_state
+lte_sheet['Radio_Total_Power_W'] = None  # optional: aggregate power in W
+
+for enb_id, group in lte_sheet.groupby('enb_id'):
+    for radio_port, rp_group in group.groupby('Radio_Port'):
+        if radio_port == '' or pd.isna(radio_port):
+            continue
+
+        # Determine if NR is available for this Radio_Port
+        gnb_available = (rp_group['gnb_available'] == 'Yes').any()
+        gnb_id = rp_group['gnb_id'].dropna().astype(str).iloc[0] if rp_group['gnb_id'].notna().any() else ''
+
+        lte_rows = rp_group
+
+        if gnb_available and gnb_id != '':
+            nr_rows = nr_sheet[(nr_sheet['Radio_Port'] == radio_port) & (nr_sheet['NR_ID'] == gnb_id)]
+        else:
+            nr_rows = nr_sheet.iloc[0:0]  # empty
+
+        # num_carriers = LTE rows + NR rows
+        num_carriers = len(lte_rows) + len(nr_rows)
+        if num_carriers == 0:
+            continue
+
+        # Determine Radio_Type from LTE RRH_CODE first, then NR RRH_TYPE
+        radio_type = None
+        if 'RRH_CODE' in lte_rows.columns and lte_rows['RRH_CODE'].notna().any():
+            radio_type = lte_rows['RRH_CODE'].dropna().astype(str).iloc[0]
+        elif 'RRH_TYPE' in nr_rows.columns and nr_rows['RRH_TYPE'].notna().any():
+            radio_type = nr_rows['RRH_TYPE'].dropna().astype(str).iloc[0]
+
+        if radio_type is None:
+            logging.warning(f"Missing Radio_Type for eNB {enb_id}, Radio_Port {radio_port}, skipping power check.")
+            continue
+
+        limits = get_radio_limits(radio_type)
+        if limits is None:
+            logging.warning(f"No limits found for Radio_Type {radio_type}, skipping power check.")
+            continue
+
+        allowed_carriers = limits['allowed_carriers']
+        power_limit = limits['power_limit']
+        tolerance = limits['tolerance']
+
+        # Compute total power usage in watts for LTE and NR separately
+        power_usage = {}
+
+        if not lte_rows.empty and 'OUTPUT_POWER' in lte_rows.columns:
+            total_lte_power_w = lte_rows['OUTPUT_POWER'].fillna(0).astype(float).sum()
+            power_usage['LTE'] = total_lte_power_w
+
+        if not nr_rows.empty and 'OUTPUT_POWER_DBM' in nr_rows.columns:
+            nr_dbm = nr_rows['OUTPUT_POWER_DBM'].fillna(0).astype(float)
+            total_nr_power_w = dbm_to_watts(nr_dbm).sum()
+            power_usage['NR'] = total_nr_power_w
+
+        if not power_usage:
+            continue
+
+        radio_attributes = {
+            'radio_id': f"{enb_id}_{radio_port}",
+            'num_carriers': num_carriers,
+            'allowed_carriers': allowed_carriers,
+            'power_limit': power_limit,
+            'tolerance': tolerance,      # pulled from radio_attributes_list
+            'power_usage': power_usage,
+        }
+
+        calculator = RadioPowerCalculator(radio_attributes)
+
+        try:
+            line_output = calculator.calculate_power()
+            power_state = line_output['power_state']            # result of determine_power_state
+            total_power = line_output['aggregate_power_usage']
+        except ValueError as e:
+            power_state = f"Error: {e}"
+            total_power = None
+
+        # Write results back to ALL LTE rows for this Radio_Port
+        lte_sheet.loc[rp_group.index, 'Radio_Power_State'] = power_state
+        lte_sheet.loc[rp_group.index, 'Radio_Total_Power_W'] = total_power
+
+# -----------------------------------------------------------------------------
+# 5) Save updated LTE_RAN_CIQ with Radio_Power_State column
+# -----------------------------------------------------------------------------
+timestamp = datetime.now().strftime('%m_%d_%H_%M')
+new_file_name = f"{file_name.split('.')[0]}_{timestamp}.xlsx"
+save_path = os.path.join('/home/ljackson/rnd/Power_Check', new_file_name)
+os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+lte_sheet.to_excel(save_path, index=False)
+
+print(f"Saved LTE_RAN_CIQ with Radio_Power_State to: {save_path}")
